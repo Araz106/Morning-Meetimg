@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Morning Meeting — Haul Dispatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151A;
+    --panel:#1A1E26;
+    --panel-2:#20252F;
+    --border:#2A303C;
+    --border-soft:#252B36;
+    --text:#E7E9ED;
+    --text-muted:#8891A0;
+    --text-faint:#5B6472;
+    --gold:#D4A73C;
+    --gold-dim:#8A7028;
+    --blue:#4A9FC0;
+    --amber:#E2872B;
+    --red:#C05656;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:560px;margin:0 auto;padding:16px 16px 100px;}
+
+  /* Header */
+  .header{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding:14px 2px 18px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:18px;
+  }
+  .header .brand{display:flex;flex-direction:column;gap:2px;}
+  .header .kicker{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;letter-spacing:.16em;color:var(--gold);
+    text-transform:uppercase;
+  }
+  .header h1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;font-size:26px;letter-spacing:.01em;
+    margin:0;text-transform:uppercase;
+  }
+  .icon-btn{
+    background:var(--panel-2);border:1px solid var(--border);
+    color:var(--text-muted);border-radius:8px;
+    width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:border-color .15s;
+  }
+  .icon-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
+  .icon-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+
+  /* Section label */
+  .section-label{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:600;font-size:14px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--text-muted);
+    margin:22px 2px 10px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .section-label .count{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);
+  }
+
+  /* Stock chips */
+  .chip-grid{display:flex;flex-wrap:wrap;gap:10px;}
+  .shift-toggle{display:flex;gap:8px;margin-bottom:20px;}
+  .shift-btn{
+    flex:1;padding:10px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text-muted);
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;
+    text-transform:uppercase;letter-spacing:.05em;cursor:pointer;
+    transition:border-color .15s,background .15s,color .15s;
+  }
+  .shift-btn:hover{border-color:var(--gold-dim);}
+  .shift-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .shift-btn.active{
+    background:linear-gradient(180deg,rgba(212,167,60,.18),rgba(212,167,60,.06));
+    border-color:var(--gold);color:var(--gold);
+  }
+  .stope-card.unavailable{opacity:.45;}
+  .shift-mini{display:flex;gap:4px;}
+  .shift-mini button{
+    flex:1;padding:4px 0;font-size:10px;border-radius:5px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text-faint);font-family:'IBM Plex Mono',monospace;
+    cursor:pointer;font-weight:600;letter-spacing:.03em;
+  }
+  .shift-mini button.active{background:var(--blue);color:#0D1620;border-color:var(--blue);}
+  .shift-mini button:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+  .not-on-shift-tag{
+    font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--blue);
+    text-align:center;padding:2px 0;
+  }
+  .stope-card{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;padding:12px 12px 10px;
+    display:flex;flex-direction:column;gap:8px;min-width:150px;flex:1 1 150px;
+    transition:border-color .15s, background .15s;
+  }
+  .stope-card.active{
+    border-color:var(--gold);background:linear-gradient(180deg,rgba(212,167,60,.08),rgba(212,167,60,.02));
+  }
+  .stope-card .card-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px;}
+  .stope-card .name{font-size:13.5px;font-weight:600;color:var(--text);}
+  .stope-card .grade-badge{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);flex-shrink:0;
+  }
+  .avail-row{display:flex;flex-direction:column;gap:4px;}
+  .avail-inputline{display:flex;align-items:center;gap:6px;}
+  .avail-inputline label{
+    font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;
+    font-family:'IBM Plex Mono',monospace;flex-shrink:0;
+  }
+  .avail-inputline input{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    border-radius:6px;padding:6px 7px;font-family:'IBM Plex Mono',monospace;
+    font-size:13px;width:100%;min-width:0;
+  }
+  .avail-inputline input:focus-visible{outline:none;border-color:var(--gold-dim);}
+  .avail-oz{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--blue);
+    display:flex;justify-content:space-between;
+  }
+  .avail-oz .max-trk{color:var(--text-faint);}
+  .move-btn{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text-muted);
+    border-radius:7px;padding:8px 10px;font-size:12.5px;font-family:'Inter',sans-serif;
+    font-weight:600;cursor:pointer;text-align:center;transition:border-color .15s,color .15s;
+  }
+  .move-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
+  .move-btn:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+  .move-btn.filled{background:var(--gold);color:#1A1406;border-color:var(--gold);}
+  .empty-stock{
+    color:var(--text-faint);font-size:13px;border:1px dashed var(--border);
+    border-radius:9px;padding:16px;text-align:center;
+  }
+  .add-stope-btn{
+    background:transparent;border:1px dashed var(--border);color:var(--text-muted);
+    border-radius:9px;padding:10px 12px;min-width:118px;flex:1 1 118px;
+    cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:border-color .15s,color .15s;
+  }
+  .add-stope-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
+
+  /* Optimizer */
+  .optimizer-panel{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:14px 16px 16px;
+  }
+  .run-optimizer-btn{
+    width:100%;padding:12px;border-radius:9px;border:1px solid var(--gold-dim);
+    background:linear-gradient(180deg,rgba(212,167,60,.14),rgba(212,167,60,.04));
+    color:var(--gold);font-family:'Inter',sans-serif;font-weight:700;font-size:13.5px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .run-optimizer-btn:hover{background:rgba(212,167,60,.18);}
+  .run-optimizer-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .optimizer-hint{
+    font-size:12px;color:var(--text-faint);text-align:center;padding:8px 4px 2px;
+  }
+  .combo-list{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+  .combo-card{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;
+  }
+  .combo-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .combo-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;}
+  .combo-status{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:2px 7px;border-radius:5px;font-weight:600;
+  }
+  .combo-status.ok{background:rgba(93,190,109,.15);color:#5DBE6D;}
+  .combo-status.warn{background:rgba(226,135,43,.15);color:var(--amber);}
+  .combo-lines{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+  .combo-phase-label{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;
+    color:var(--text-faint);text-transform:uppercase;margin:6px 0 2px;
+  }
+  .combo-phase-label:first-child{margin-top:0;}
+  .combo-phase-label.night{color:var(--blue);}
+  .combo-line{
+    display:flex;justify-content:space-between;gap:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);
+  }
+  .combo-line .cl-trucks{color:var(--amber);font-weight:700;min-width:20px;}
+  .combo-line .cl-name{color:var(--text);flex:1;font-family:'Inter',sans-serif;font-size:12.5px;}
+  .combo-line .cl-tag{color:var(--text-faint);font-size:10.5px;}
+  .combo-line{
+    display:flex;justify-content:space-between;gap:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);
+  }
+  .combo-line .cl-trucks{color:var(--amber);font-weight:700;min-width:20px;}
+  .combo-line .cl-name{color:var(--text);flex:1;font-family:'Inter',sans-serif;font-size:12.5px;}
+  .combo-totals{
+    display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;color:var(--text-muted);border-top:1px dashed var(--border);padding-top:8px;margin-bottom:10px;
+  }
+  .combo-totals b{color:var(--text);}
+  .combo-use-btn{
+    width:100%;padding:9px;border-radius:7px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);font-family:'Inter',sans-serif;font-weight:600;
+    font-size:12.5px;cursor:pointer;transition:border-color .15s;
+  }
+  .combo-use-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .combo-use-btn:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+
+  /* Ticket */
+  .ticket-wrap{margin-top:24px;}
+  .ticket{
+    background:repeating-linear-gradient(var(--panel),var(--panel));
+    background-color:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    position:relative;
+    overflow:hidden;
+  }
+  .ticket-notch{
+    position:absolute;left:0;right:0;height:0;
+    border-top:1px dashed var(--border);
+  }
+  .ticket-head{
+    padding:16px 18px 12px;
+    display:flex;justify-content:space-between;align-items:flex-start;
+    border-bottom:1px dashed var(--border);
+  }
+  .ticket-head .t-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;
+    letter-spacing:.03em;text-transform:uppercase;color:var(--gold);
+  }
+  .ticket-head .t-date{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);margin-top:2px;
+  }
+  .ticket-head .t-num{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);text-align:right;
+  }
+  .ticket-lines{padding:6px 8px;}
+  .ticket-line{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 10px;border-bottom:1px solid var(--border-soft);
+  }
+  .ticket-line:last-child{border-bottom:none;}
+  .ticket-line .t-trucks{
+    font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:20px;color:var(--amber);
+    min-width:34px;text-align:center;
+  }
+  .ticket-line .t-body{flex:1;min-width:0;}
+  .ticket-line .t-stope{font-weight:600;font-size:14px;color:var(--text);}
+  .ticket-line .t-detail{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:2px;
+  }
+  .ticket-line .t-remove{
+    background:none;border:none;color:var(--text-faint);cursor:pointer;
+    font-size:16px;padding:4px 6px;border-radius:6px;line-height:1;
+  }
+  .ticket-line .t-remove:hover{color:var(--red);}
+  .phase-group-header{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 10px 6px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--gold);
+  }
+  .phase-group-header:not(:first-child){border-top:1px dashed var(--border);margin-top:2px;}
+  .phase-group-header.night{color:var(--blue);}
+  .phase-group-header .pg-sub{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-faint);
+    text-transform:none;letter-spacing:0;font-weight:500;
+  }
+  .ticket-empty{
+    padding:32px 20px;text-align:center;color:var(--text-faint);font-size:13px;
+  }
+  /* Targets panel */
+  .targets-panel{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:14px 16px 16px;
+  }
+  .targets-grid{display:flex;gap:12px;}
+  .target-field{flex:1;display:flex;flex-direction:column;gap:6px;}
+  .target-field label{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;
+    color:var(--text-faint);text-transform:uppercase;
+  }
+  .target-input-wrap{
+    display:flex;align-items:center;background:var(--panel-2);
+    border:1px solid var(--border);border-radius:8px;padding:0 10px;
+  }
+  .target-input-wrap input{
+    background:transparent;border:none;color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;
+    padding:9px 0;width:100%;text-align:left;
+  }
+  .target-input-wrap input:focus-visible{outline:none;}
+  .target-input-wrap:focus-within{border-color:var(--gold-dim);}
+  .target-input-wrap .unit{font-size:11px;color:var(--text-faint);}
+  .target-progress{margin-top:12px;display:flex;flex-direction:column;gap:10px;}
+  .prog-row{display:flex;flex-direction:column;gap:5px;}
+  .prog-labels{
+    display:flex;justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);
+  }
+  .prog-labels .prog-name{color:var(--text-muted);}
+  .prog-labels .prog-val{color:var(--text);font-weight:600;}
+  .prog-labels .prog-val.over{color:var(--gold);}
+  .prog-track{
+    height:7px;border-radius:4px;background:var(--panel-2);
+    border:1px solid var(--border);overflow:hidden;
+  }
+  .prog-fill{height:100%;border-radius:4px;background:var(--blue);transition:width .2s;}
+  .prog-fill.gold{background:var(--gold);}
+  .prog-fill.over{background:#5DBE6D;}
+  .prog-remaining{font-size:10.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;}
+
+  .ticket-totals{
+    display:flex;justify-content:space-between;
+    padding:14px 18px;border-top:1px dashed var(--border);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .ticket-totals .tot-item{display:flex;flex-direction:column;gap:2px;}
+  .ticket-totals .tot-label{font-size:10px;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;}
+  .ticket-totals .tot-value{font-size:16px;font-weight:700;color:var(--text);}
+  .ticket-totals .tot-value.gold{color:var(--gold);}
+  .ticket-totals .tot-value.amber{color:var(--amber);}
+
+  .ticket-actions{display:flex;gap:8px;margin-top:12px;}
+  .btn{
+    flex:1;padding:12px 14px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);font-family:'Inter',sans-serif;
+    font-weight:600;font-size:13.5px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:border-color .15s, background .15s;
+  }
+  .btn:hover{border-color:var(--gold-dim);}
+  .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .btn.primary{background:var(--gold);border-color:var(--gold);color:#1A1406;}
+  .btn.primary:hover{background:#e0b64b;}
+  .btn.copied{background:#2E4A2E;border-color:#3E6B3E;color:#B7E3B7;}
+
+  /* Numpad modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(8,10,14,.72);
+    display:flex;align-items:flex-end;justify-content:center;
+    z-index:50;opacity:0;pointer-events:none;transition:opacity .15s;
+  }
+  .overlay.open{opacity:1;pointer-events:auto;}
+  .sheet{
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:16px 16px 0 0;width:100%;max-width:560px;
+    padding:18px 18px 22px;
+    transform:translateY(12px);transition:transform .18s;
+  }
+  .overlay.open .sheet{transform:translateY(0);}
+  .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .sheet-head .s-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:20px;text-transform:uppercase;}
+  .sheet-head .s-grade{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold);margin-top:2px;}
+  .sheet-close{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px 8px;}
+
+  .numpad-display{
+    margin:16px 0 6px;
+    display:flex;align-items:baseline;justify-content:flex-end;gap:6px;
+    border-bottom:1px solid var(--border);padding-bottom:10px;
+  }
+  .numpad-display input{
+    background:transparent;border:none;color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:38px;font-weight:600;
+    letter-spacing:.02em;text-align:right;width:100%;padding:0;
+  }
+  .numpad-display input:focus-visible{outline:none;}
+  .numpad-display .unit{font-size:16px;color:var(--text-faint);flex-shrink:0;}
+  .numpad-live{
+    display:flex;justify-content:space-between;margin:8px 0 16px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);
+  }
+  .numpad-live b{color:var(--blue);}
+  .numpad-hint{
+    font-size:10.5px;color:var(--text-faint);text-align:right;margin-top:-8px;margin-bottom:10px;
+  }
+  .numpad-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  }
+  .numkey{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:9px;
+    color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;
+    padding:16px 0;cursor:pointer;transition:background .1s, border-color .1s;
+  }
+  .numkey:hover{border-color:var(--gold-dim);}
+  .numkey:active{background:var(--panel);}
+  .numkey.func{color:var(--text-muted);font-size:15px;font-family:'Inter',sans-serif;font-weight:600;}
+  .numkey:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .sheet-confirm{
+    margin-top:14px;width:100%;padding:15px;border-radius:9px;border:none;
+    background:var(--gold);color:#1A1406;font-family:'Inter',sans-serif;
+    font-weight:700;font-size:15px;cursor:pointer;
+  }
+  .sheet-confirm:disabled{background:var(--panel-2);color:var(--text-faint);}
+
+  /* Stock editor */
+  .stock-editor{margin-top:10px;}
+  .stock-row{
+    display:grid;grid-template-columns:1fr 60px 78px 60px 28px;gap:6px;
+    margin-bottom:6px;align-items:center;
+  }
+  .stock-row input, .stock-row select{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    border-radius:7px;padding:9px 6px;font-family:'Inter',sans-serif;font-size:12.5px;width:100%;
+  }
+  .stock-row input.mono{font-family:'IBM Plex Mono',monospace;text-align:right;}
+  .stock-row select{font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:9px 2px;}
+  .stock-row input:focus-visible, .stock-row select:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+  .stock-row .del{
+    background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;
+  }
+  .stock-row .del:hover{color:var(--red);}
+  .stock-headers{
+    display:grid;grid-template-columns:1fr 60px 78px 60px 28px;gap:6px;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-faint);
+    text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding:0 2px;
+  }
+  .assumptions-row{
+    display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .assum-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:110px;}
+  .assum-field label{font-size:11px;color:var(--text-muted);}
+  .assum-field input{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    border-radius:7px;padding:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;
+  }
+  .assum-field input:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+
+  .save-note{
+    font-size:11px;color:var(--text-faint);margin-top:14px;text-align:center;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="brand">
+      <div class="kicker">UMA Obuasi &middot; Underground</div>
+      <h1>Morning Meeting</h1>
+    </div>
+    <button class="icon-btn" id="settingsBtn" title="Stock & assumptions" aria-label="Open settings">⚙</button>
+  </div>
+
+  <div class="section-label"><span>Today's targets</span></div>
+  <div class="targets-panel">
+    <div class="targets-grid">
+      <div class="target-field">
+        <label>Ore target</label>
+        <div class="target-input-wrap">
+          <input type="number" id="targetTonnes" inputmode="numeric" placeholder="0">
+          <span class="unit">t</span>
+        </div>
+      </div>
+      <div class="target-field">
+        <label>Ounces target</label>
+        <div class="target-input-wrap">
+          <input type="number" id="targetOunces" inputmode="numeric" placeholder="0">
+          <span class="unit">oz</span>
+        </div>
+      </div>
+    </div>
+    <div class="target-progress" id="targetProgress"></div>
+  </div>
+
+  <div class="section-label" style="margin-top:26px;"><span>Suggested combinations</span></div>
+  <div class="optimizer-panel">
+    <button class="run-optimizer-btn" id="runOptimizerBtn">⚡ Run optimizer</button>
+    <div id="optimizerResults"></div>
+  </div>
+
+  <div class="section-label"><span>Stopes on call</span><span class="count" id="stopeCount">0</span></div>
+  <div class="chip-grid" id="stopeChips"></div>
+
+  <div class="ticket-wrap">
+    <div class="section-label" style="margin-top:26px;"><span>Dispatch ticket</span><span class="count" id="ticketDate"></span></div>
+    <div class="ticket">
+      <div class="ticket-head">
+        <div>
+          <div class="t-title" id="ticketShiftTitle">Full Shift Haul Plan</div>
+          <div class="t-date" id="ticketTime"></div>
+        </div>
+        <div class="t-num" id="ticketRef"></div>
+      </div>
+      <div class="ticket-lines" id="ticketLines">
+        <div class="ticket-empty">Tap a stope above to add it to the haul plan.</div>
+      </div>
+      <div class="ticket-totals">
+        <div class="tot-item">
+          <div class="tot-label">Trucks</div>
+          <div class="tot-value amber" id="totTrucks">0</div>
+        </div>
+        <div class="tot-item">
+          <div class="tot-label">Tonnes</div>
+          <div class="tot-value" id="totTonnes">0</div>
+        </div>
+        <div class="tot-item">
+          <div class="tot-label">Ounces</div>
+          <div class="tot-value gold" id="totOunces">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="ticket-actions">
+      <button class="btn" id="clearBtn">Clear ticket</button>
+      <button class="btn primary" id="copyBtn">Copy message</button>
+    </div>
+  </div>
+
+  <div class="save-note" id="saveNote">Stock & assumptions save automatically to this device.</div>
+</div>
+
+<!-- Numpad sheet -->
+<div class="overlay" id="numpadOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div>
+        <div class="s-title" id="npStopeName">Stope</div>
+        <div class="s-grade" id="npStopeGrade">0.00 g/t</div>
+      </div>
+      <button class="sheet-close" id="npClose" aria-label="Close">✕</button>
+    </div>
+    <div class="numpad-display"><input type="text" id="npValueInput" inputmode="decimal" autocomplete="off"><span class="unit">t</span></div>
+    <div class="numpad-hint">Type on your keyboard or tap the pad below · Enter to add</div>
+    <div class="numpad-live">
+      <span>Ounces: <b id="npOunces">0</b></span>
+      <span>Trucks: <b id="npTrucks">0</b></span>
+    </div>
+    <div class="numpad-grid" id="numpadGrid">
+      <button class="numkey" data-k="1">1</button>
+      <button class="numkey" data-k="2">2</button>
+      <button class="numkey" data-k="3">3</button>
+      <button class="numkey" data-k="4">4</button>
+      <button class="numkey" data-k="5">5</button>
+      <button class="numkey" data-k="6">6</button>
+      <button class="numkey" data-k="7">7</button>
+      <button class="numkey" data-k="8">8</button>
+      <button class="numkey" data-k="9">9</button>
+      <button class="numkey func" data-k="clear">Clear</button>
+      <button class="numkey" data-k="0">0</button>
+      <button class="numkey func" data-k="back">⌫</button>
+    </div>
+    <button class="sheet-confirm" id="npConfirm">Add to ticket</button>
+  </div>
+</div>
+
+<!-- Settings sheet -->
+<div class="overlay" id="settingsOverlay">
+  <div class="sheet" style="max-height:82vh;overflow-y:auto;">
+    <div class="sheet-head">
+      <div class="s-title">Stock &amp; Assumptions</div>
+      <button class="sheet-close" id="setClose" aria-label="Close">✕</button>
+    </div>
+    <div class="stock-editor">
+      <div class="stock-headers">
+        <span>Stope</span><span>g/t</span><span>Tonnes</span><span>Shift</span><span></span>
+      </div>
+      <div id="stockRows"></div>
+      <button class="add-stope-btn" id="addStopeBtn" style="width:100%;margin-top:4px;">+ Add stope</button>
+    </div>
+    <div class="assumptions-row">
+      <div class="assum-field">
+        <label>Truck capacity (t)</label>
+        <input type="number" id="asmTruck" step="1">
+      </div>
+      <div class="assum-field">
+        <label>Ounce factor</label>
+        <input type="number" id="asmFactor" step="0.0000001">
+      </div>
+      <div class="assum-field">
+        <label>Recovery (%)</label>
+        <input type="number" id="asmRecovery" step="1">
+      </div>
+    </div>
+    <button class="sheet-confirm" id="setDone" style="margin-top:18px;">Done</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const DEFAULT_STOCK = [
+    {id:'s1', name:'3400L X-Cut 12', grade:3.2, tonnes:1200, shift:'both'},
+    {id:'s2', name:'3400L Stope 5', grade:4.8, tonnes:850, shift:'day'},
+    {id:'s3', name:'3450L Stope 2', grade:2.9, tonnes:1500, shift:'both'},
+    {id:'s4', name:'3500L Drive 7', grade:5.5, tonnes:600, shift:'night'},
+  ];
+  const DEFAULT_ASSUM = {truckCap:51, ozFactor:0.0321507, recovery:100};
+  const DEFAULT_TARGETS = {tonnes:0, ounces:0};
+
+  let stock = [];
+  let assumptions = {...DEFAULT_ASSUM};
+  let targets = {...DEFAULT_TARGETS};
+  let requests = []; // {stopeId, tonnes, phase?: 'day'|'night'}
+  let activeStopeId = null;
+  let npValue = '';
+
+  const $ = id => document.getElementById(id);
+
+  function uid(){return 's'+Math.random().toString(36).slice(2,9);}
+
+  async function loadState(){
+    try{
+      const s = await window.storage.get('mm-stock', false);
+      stock = s ? JSON.parse(s.value) : DEFAULT_STOCK;
+    }catch(e){ stock = DEFAULT_STOCK; }
+    stock.forEach(s=>{ if(!s.shift) s.shift = 'both'; });
+    try{
+      const a = await window.storage.get('mm-assumptions', false);
+      assumptions = a ? JSON.parse(a.value) : {...DEFAULT_ASSUM};
+    }catch(e){ assumptions = {...DEFAULT_ASSUM}; }
+    try{
+      const t = await window.storage.get('mm-targets', false);
+      targets = t ? JSON.parse(t.value) : {...DEFAULT_TARGETS};
+    }catch(e){ targets = {...DEFAULT_TARGETS}; }
+    $('targetTonnes').value = targets.tonnes || '';
+    $('targetOunces').value = targets.ounces || '';
+    render();
+  }
+
+  async function saveTargets(){
+    try{ await window.storage.set('mm-targets', JSON.stringify(targets), false); }
+    catch(e){ console.error('save targets failed', e); }
+  }
+
+  async function saveStock(){
+    try{ await window.storage.set('mm-stock', JSON.stringify(stock), false); }
+    catch(e){ console.error('save stock failed', e); }
+  }
+  async function saveAssumptions(){
+    try{ await window.storage.set('mm-assumptions', JSON.stringify(assumptions), false); }
+    catch(e){ console.error('save assumptions failed', e); }
+  }
+
+  function fmt(n, d=0){
+    if(!isFinite(n)) return '0';
+    return Number(n).toLocaleString(undefined,{maximumFractionDigits:d, minimumFractionDigits:d});
+  }
+
+  function calcOunces(tonnes, grade){
+    return tonnes * grade * assumptions.ozFactor * (assumptions.recovery/100);
+  }
+  function calcTrucks(tonnes){
+    return Math.ceil(tonnes / assumptions.truckCap);
+  }
+
+  function stopeById(id){ return stock.find(s=>s.id===id); }
+
+  function computeTotals(){
+    let totTonnes=0, totOz=0, totTrucks=0;
+    requests.forEach(r=>{
+      const s = stopeById(r.stopeId);
+      if(!s) return;
+      totTonnes += Number(r.tonnes);
+      totOz += calcOunces(r.tonnes, s.grade);
+      totTrucks += calcTrucks(r.tonnes);
+    });
+    return {totTonnes, totOz, totTrucks};
+  }
+
+  function renderStopeChips(){
+    const grid = $('stopeChips');
+    grid.innerHTML = '';
+    $('stopeCount').textContent = stock.length;
+    if(stock.length===0){
+      grid.innerHTML = '<div class="empty-stock" style="flex:1 1 100%;">No stopes yet — tap ⚙ to add stock.</div>';
+      return;
+    }
+    stock.forEach(s=>{
+      const reqsForStope = requests.filter(r=>r.stopeId===s.id);
+      const combinedTonnes = reqsForStope.reduce((sum,r)=>sum+Number(r.tonnes),0);
+      const availOz = calcOunces(s.tonnes, s.grade);
+      const maxTrucks = Math.floor(s.tonnes / assumptions.truckCap);
+      const card = document.createElement('div');
+      card.className = 'stope-card' + (reqsForStope.length ? ' active' : '');
+      let badgeText = '+ Set haul qty';
+      if(reqsForStope.length===1 && !reqsForStope[0].phase){
+        badgeText = `${fmt(reqsForStope[0].tonnes)} t · ${calcTrucks(reqsForStope[0].tonnes)} trucks →`;
+      } else if(reqsForStope.length>0){
+        const parts = reqsForStope.map(r=> (r.phase==='night'?'Night ':r.phase==='day'?'Day ':'') + fmt(r.tonnes)+'t');
+        badgeText = parts.join(' + ') + ' →';
+      }
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="name">${escapeHtml(s.name)}</span>
+          <span class="grade-badge">${fmt(s.grade,2)} g/t</span>
+        </div>
+        <div class="shift-mini">
+          <button data-shift="day" class="${s.shift==='day'?'active':''}">Day</button>
+          <button data-shift="night" class="${s.shift==='night'?'active':''}">Night</button>
+          <button data-shift="both" class="${s.shift==='both'?'active':''}">Both</button>
+        </div>
+        <div class="avail-row">
+          <div class="avail-inputline">
+            <label>Avail</label>
+            <input type="number" class="avail-tonnes-input" value="${s.tonnes}" min="0" step="1" inputmode="numeric">
+            <span style="font-size:11px;color:var(--text-faint);flex-shrink:0;">t</span>
+          </div>
+          <div class="avail-oz">
+            <span>≈ ${fmt(availOz)} oz on hand</span>
+            <span class="max-trk">${maxTrucks} trk max</span>
+          </div>
+        </div>
+        ${s.shift==='night' ? `<div class="not-on-shift-tag">⏱ Comes online: Night shift</div>` : ''}
+        <button class="move-btn${reqsForStope.length ? ' filled' : ''}">${badgeText}</button>
+      `;
+      const availInput = card.querySelector('.avail-tonnes-input');
+      availInput.addEventListener('click', e=> e.stopPropagation());
+      availInput.addEventListener('input', ()=>{
+        s.tonnes = parseFloat(availInput.value)||0;
+        saveStock();
+        renderTicket();
+        const oz = calcOunces(s.tonnes, s.grade);
+        const mt = Math.floor(s.tonnes / assumptions.truckCap);
+        card.querySelector('.avail-oz').innerHTML = `<span>≈ ${fmt(oz)} oz on hand</span><span class="max-trk">${mt} trk max</span>`;
+      });
+      card.querySelectorAll('.shift-mini button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          s.shift = btn.dataset.shift;
+          saveStock();
+          render();
+        });
+      });
+      card.querySelector('.move-btn').addEventListener('click', ()=>openNumpad(s.id));
+      grid.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function renderTicketLine(r){
+    const s = stopeById(r.stopeId);
+    if(!s) return null;
+    const trucks = calcTrucks(r.tonnes);
+    const oz = calcOunces(r.tonnes, s.grade);
+    const row = document.createElement('div');
+    row.className = 'ticket-line';
+    row.innerHTML = `
+      <div class="t-trucks">${trucks}</div>
+      <div class="t-body">
+        <div class="t-stope">${escapeHtml(s.name)}</div>
+        <div class="t-detail">${fmt(r.tonnes)} t · ${fmt(s.grade,2)} g/t · ${fmt(oz)} oz</div>
+      </div>
+      <button class="t-remove" aria-label="Remove">✕</button>
+    `;
+    row.querySelector('.t-remove').addEventListener('click', ()=>{
+      requests = requests.filter(x=>x!==r);
+      render();
+    });
+    return row;
+  }
+
+  function renderTicket(){
+    const linesEl = $('ticketLines');
+    linesEl.innerHTML = '';
+    if(requests.length===0){
+      linesEl.innerHTML = '<div class="ticket-empty">Tap a stope above to add it to the haul plan.</div>';
+    } else {
+      const dayReqs = requests.filter(r=>r.phase==='day');
+      const nightReqs = requests.filter(r=>r.phase==='night');
+      const plainReqs = requests.filter(r=>!r.phase);
+      const hasPhases = dayReqs.length>0 || nightReqs.length>0;
+
+      if(hasPhases){
+        if(dayReqs.length){
+          const h = document.createElement('div');
+          h.className = 'phase-group-header day';
+          h.innerHTML = `<span>☀ Day Shift</span>`;
+          linesEl.appendChild(h);
+          dayReqs.forEach(r=>{ const row = renderTicketLine(r); if(row) linesEl.appendChild(row); });
+        }
+        if(nightReqs.length){
+          const h = document.createElement('div');
+          h.className = 'phase-group-header night';
+          h.innerHTML = `<span>☾ Night Shift</span>`;
+          linesEl.appendChild(h);
+          nightReqs.forEach(r=>{ const row = renderTicketLine(r); if(row) linesEl.appendChild(row); });
+        }
+        if(plainReqs.length){
+          const h = document.createElement('div');
+          h.className = 'phase-group-header';
+          h.innerHTML = `<span>Unassigned</span>`;
+          linesEl.appendChild(h);
+          plainReqs.forEach(r=>{ const row = renderTicketLine(r); if(row) linesEl.appendChild(row); });
+        }
+      } else {
+        requests.forEach(r=>{ const row = renderTicketLine(r); if(row) linesEl.appendChild(row); });
+      }
+    }
+    const {totTonnes, totOz, totTrucks} = computeTotals();
+    $('totTrucks').textContent = fmt(totTrucks);
+    $('totTonnes').textContent = fmt(totTonnes);
+    $('totOunces').textContent = fmt(totOz);
+    renderTargetProgress(totTonnes, totOz);
+
+    const now = new Date();
+    $('ticketTime').textContent = now.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'}) + ' · ' + now.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    $('ticketRef').textContent = 'REF ' + now.getFullYear().toString().slice(2) + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  }
+
+  function buildMessage(){
+    if(requests.length===0) return '';
+    function lineText(r){
+      const s = stopeById(r.stopeId);
+      if(!s) return '';
+      const trucks = calcTrucks(r.tonnes);
+      return `Take ${trucks} truck${trucks>1?'s':''} from ${s.name} stope`;
+    }
+    const dayReqs = requests.filter(r=>r.phase==='day');
+    const nightReqs = requests.filter(r=>r.phase==='night');
+    const plainReqs = requests.filter(r=>!r.phase);
+    const hasPhases = dayReqs.length>0 || nightReqs.length>0;
+
+    const out = [];
+    if(hasPhases){
+      if(dayReqs.length){
+        out.push('DAY SHIFT');
+        dayReqs.forEach(r=>{ const t=lineText(r); if(t) out.push(t); });
+      }
+      if(nightReqs.length){
+        if(out.length) out.push('');
+        out.push('NIGHT SHIFT');
+        nightReqs.forEach(r=>{ const t=lineText(r); if(t) out.push(t); });
+      }
+      if(plainReqs.length){
+        if(out.length) out.push('');
+        out.push('UNASSIGNED');
+        plainReqs.forEach(r=>{ const t=lineText(r); if(t) out.push(t); });
+      }
+    } else {
+      requests.forEach(r=>{ const t=lineText(r); if(t) out.push(t); });
+    }
+
+    const {totTonnes, totOz, totTrucks} = computeTotals();
+    out.push('');
+    out.push(`Total: ${totTrucks} trucks, ${fmt(totTonnes)} t, ${fmt(totOz)} oz`);
+    if(targets.tonnes>0 || targets.ounces>0){
+      const parts = [];
+      if(targets.tonnes>0) parts.push(`${fmt(totTonnes)}/${fmt(targets.tonnes)} t`);
+      if(targets.ounces>0) parts.push(`${fmt(totOz)}/${fmt(targets.ounces)} oz`);
+      out.push(`Target: ${parts.join(' · ')}`);
+    }
+    return out.join('\n');
+  }
+
+  function renderTargetProgress(totTonnes, totOz){
+    const wrap = $('targetProgress');
+    if(targets.tonnes<=0 && targets.ounces<=0){
+      wrap.innerHTML = '<div class="prog-remaining">Set an ore or ounces target above to track progress here.</div>';
+      return;
+    }
+    let html = '';
+    if(targets.tonnes>0){
+      const pct = Math.min(100, (totTonnes/targets.tonnes)*100);
+      const over = totTonnes >= targets.tonnes;
+      const remaining = Math.max(0, targets.tonnes-totTonnes);
+      html += `
+        <div class="prog-row">
+          <div class="prog-labels">
+            <span class="prog-name">Ore</span>
+            <span class="prog-val ${over?'over':''}">${fmt(totTonnes)} / ${fmt(targets.tonnes)} t</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill ${over?'over':''}" style="width:${pct}%"></div></div>
+          <div class="prog-remaining">${over ? 'Target reached' : fmt(remaining)+' t remaining'}</div>
+        </div>`;
+    }
+    if(targets.ounces>0){
+      const pct = Math.min(100, (totOz/targets.ounces)*100);
+      const over = totOz >= targets.ounces;
+      const remaining = Math.max(0, targets.ounces-totOz);
+      html += `
+        <div class="prog-row">
+          <div class="prog-labels">
+            <span class="prog-name">Ounces</span>
+            <span class="prog-val ${over?'over':''}">${fmt(totOz)} / ${fmt(targets.ounces)} oz</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill gold ${over?'over':''}" style="width:${pct}%"></div></div>
+          <div class="prog-remaining">${over ? 'Target reached' : fmt(remaining)+' oz remaining'}</div>
+        </div>`;
+    }
+    wrap.innerHTML = html;
+  }
+
+  function render(){
+    renderStopeChips();
+    renderTicket();
+  }
+
+  // ---- Optimizer: build day+night truck combinations from stopes with a haul qty set ----
+  function getCandidates(){
+    // Only stopes with a haul quantity set are eligible — that quantity is the hard cap.
+    // Combine multiple existing entries for the same stope (e.g. a prior day+night split) into one cap.
+    const byStope = {};
+    requests.forEach(r=>{ byStope[r.stopeId] = (byStope[r.stopeId]||0) + Number(r.tonnes); });
+    return Object.entries(byStope)
+      .map(([stopeId, tonnes])=>{
+        const s = stopeById(stopeId);
+        if(!s || s.grade<=0 || tonnes<=0) return null;
+        const capTonnes = Math.min(tonnes, s.tonnes); // never exceed what's actually available either
+        const maxTrucks = Math.floor(capTonnes / assumptions.truckCap);
+        if(maxTrucks<=0) return null;
+        return {
+          id:s.id, name:s.name, grade:s.grade, shift:s.shift||'both',
+          maxTrucks,
+          ozPerTruck: calcOunces(assumptions.truckCap, s.grade)
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function targetMetFn(ozTarget, oreCap){
+    return (totOz, totTonnes)=>{
+      if(ozTarget!=null) return totOz >= ozTarget;
+      if(oreCap!=null) return totTonnes >= oreCap;
+      return true;
+    };
+  }
+
+  function allocateSequential(orderedCandidates, ozTarget, oreCap){
+    const truckCap = assumptions.truckCap;
+    const alloc = {}; let totOz=0, totTonnes=0;
+    const met = targetMetFn(ozTarget, oreCap);
+    function tryAdd(c){
+      if(oreCap!=null && totTonnes+truckCap>oreCap) return false;
+      alloc[c.id]=(alloc[c.id]||0)+1; totOz+=c.ozPerTruck; totTonnes+=truckCap; return true;
+    }
+    outer: for(const c of orderedCandidates){
+      for(let i=0;i<c.maxTrucks;i++){
+        if(met(totOz,totTonnes)) break outer;
+        if(!tryAdd(c)) break outer;
+      }
+    }
+    return {alloc, totOz, totTonnes};
+  }
+
+  function allocateWeighted(candidates, ozTarget, oreCap){
+    const truckCap = assumptions.truckCap;
+    const alloc = {}; let totOz=0, totTonnes=0;
+    const met = targetMetFn(ozTarget, oreCap);
+    function tryAdd(c){
+      if(oreCap!=null && totTonnes+truckCap>oreCap) return false;
+      alloc[c.id]=(alloc[c.id]||0)+1; totOz+=c.ozPerTruck; totTonnes+=truckCap; return true;
+    }
+    // Smooth weighted round-robin, weighted by grade: still spreads trucks across every
+    // stope with capacity left, but higher-grade stopes earn their turn more often — so
+    // the target gets reached with richer material doing more of the work, not a flat 1-each split.
+    let pool = candidates.map(c=>({...c, cw:0, left:c.maxTrucks}));
+    while(!met(totOz,totTonnes)){
+      pool = pool.filter(c=>c.left>0);
+      if(pool.length===0) break;
+      const totalWeight = pool.reduce((s,c)=>s+c.grade,0);
+      if(totalWeight<=0) break;
+      pool.forEach(c=>{ c.cw += c.grade; });
+      let selected = pool[0];
+      for(const c of pool) if(c.cw > selected.cw) selected = c;
+      if(!tryAdd(selected)) break; // ore cap reached — uniform truck size, stop entirely
+      selected.cw -= totalWeight;
+      selected.left -= 1;
+    }
+    return {alloc, totOz, totTonnes};
+  }
+
+  function allocate(candidates, ozTarget, oreCap, mode){
+    if(mode==='richest'){
+      const sorted = [...candidates].sort((a,b)=>b.grade-a.grade);
+      return allocateSequential(sorted, ozTarget, oreCap);
+    }
+    return allocateWeighted(candidates, ozTarget, oreCap);
+  }
+
+  // Night phase always exhausts newly-online (night-only) stopes first, then tops up
+  // with whatever's left in stopes already active from day — never the other way round.
+  function allocToLines(allocObj, candidatePool){
+    return Object.entries(allocObj).map(([id,trucks])=>{
+      const c = candidatePool.find(x=>x.id===id);
+      return {stopeId:id, name:c.name, trucks, tonnes:trucks*assumptions.truckCap, ounces:trucks*c.ozPerTruck};
+    }).sort((a,b)=>b.trucks-a.trucks);
+  }
+
+  function buildFullCombo(label, candidatesAll, OZT, ORET, mode){
+    const ozTarget = OZT>0 ? OZT : null;
+    const oreCap = ORET>0 ? ORET : null;
+
+    // Day phase: stopes available from the start (day or both)
+    const dayCands = candidatesAll.filter(c=>c.shift!=='night');
+    const dayRes = allocate(dayCands, ozTarget, oreCap, mode);
+
+    const remOz = ozTarget!=null ? Math.max(0, ozTarget-dayRes.totOz) : null;
+    const remOre = oreCap!=null ? Math.max(0, oreCap-dayRes.totTonnes) : null;
+
+    // Night phase: night-only stopes coming online, plus leftover capacity from day stopes not depleted —
+    // treated as one shared pool so trucks get split across all of them, not drained from the newly-online stope alone.
+    const nightOnly = candidatesAll.filter(c=>c.shift==='night');
+    const dayLeftover = dayCands.map(c=>{
+      const used = dayRes.alloc[c.id]||0;
+      const leftover = c.maxTrucks-used;
+      return leftover>0 ? {...c, maxTrucks:leftover} : null;
+    }).filter(Boolean);
+    const nightPool = [...nightOnly, ...dayLeftover];
+
+    const nightNeeded = (ozTarget!=null && remOz>0) || (ozTarget==null && oreCap!=null && remOre>0);
+    let nightRes = {alloc:{}, totOz:0, totTonnes:0};
+    if(nightNeeded && nightPool.length){
+      nightRes = allocate(nightPool, remOz, remOre, mode);
+    }
+
+    const dayLines = allocToLines(dayRes.alloc, dayCands);
+    const nightLines = allocToLines(nightRes.alloc, nightPool);
+
+    const totOz = dayRes.totOz + nightRes.totOz;
+    const totTonnes = dayRes.totTonnes + nightRes.totTonnes;
+    const totTrucks = dayLines.reduce((s,l)=>s+l.trucks,0) + nightLines.reduce((s,l)=>s+l.trucks,0);
+
+    const meetsOunces = ozTarget==null || totOz >= ozTarget - 0.0001;
+    const withinOre = oreCap==null || totTonnes <= oreCap + 0.0001;
+    let statusText = 'Meets target';
+    if(!meetsOunces || !withinOre){
+      if(oreCap!=null && totTonnes >= oreCap - 0.0001) statusText = 'Short — ore cap limits';
+      else statusText = 'Short — raise haul qty on stopes';
+    }
+    return {label, dayLines, nightLines, totOz, totTonnes, totTrucks, meetsOunces, withinOre, statusText};
+  }
+
+  function renderOptimizerResults(){
+    const wrap = $('optimizerResults');
+    const OZT = targets.ounces||0, ORET = targets.tonnes||0;
+    if(OZT<=0 && ORET<=0){
+      wrap.innerHTML = '<div class="optimizer-hint">Set an ore or ounces target above, then run the optimizer.</div>';
+      return;
+    }
+    if(requests.length===0){
+      wrap.innerHTML = '<div class="optimizer-hint">Tap "Set haul qty" on the stopes you want considered first — the optimizer only allocates trucks from stopes with a haul quantity set, up to that amount.</div>';
+      return;
+    }
+    const candidates = getCandidates();
+    if(candidates.length===0){
+      wrap.innerHTML = `<div class="optimizer-hint">None of the stopes with a haul quantity set qualify — check they have enough available tonnes and at least one truckload (${fmt(assumptions.truckCap)} t) set.</div>`;
+      return;
+    }
+    const combos = [
+      buildFullCombo('Fewest Trucks', candidates, OZT, ORET, 'richest'),
+      buildFullCombo('Balanced Spread', candidates, OZT, ORET, 'spread'),
+    ];
+    wrap.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'combo-list';
+    combos.forEach(combo=>{
+      const ok = combo.meetsOunces && combo.withinOre;
+      const card = document.createElement('div');
+      card.className = 'combo-card';
+      function lineHTML(l, tag){
+        return `
+          <div class="combo-line">
+            <span class="cl-trucks">${l.trucks}</span>
+            <span class="cl-name">${escapeHtml(l.name)}</span>
+            <span class="cl-tag">${tag}</span>
+            <span>${fmt(l.tonnes)} t</span>
+          </div>`;
+      }
+      let linesHTML = '';
+      if(combo.dayLines.length){
+        linesHTML += `<div class="combo-phase-label">☀ Day Shift</div>`;
+        linesHTML += combo.dayLines.map(l=>lineHTML(l,'')).join('');
+      }
+      if(combo.nightLines.length){
+        linesHTML += `<div class="combo-phase-label night">☾ Night Shift</div>`;
+        linesHTML += combo.nightLines.map(l=>{
+          const wasDayStope = combo.dayLines.some(dl=>dl.stopeId===l.stopeId);
+          return lineHTML(l, wasDayStope ? '(continuing)' : '(new)');
+        }).join('');
+      }
+      if(!combo.dayLines.length && !combo.nightLines.length){
+        linesHTML = '<div class="combo-line"><span class="cl-name">No trucks allocated</span></div>';
+      }
+      card.innerHTML = `
+        <div class="combo-head">
+          <span class="combo-label">${combo.label}</span>
+          <span class="combo-status ${ok?'ok':'warn'}">${combo.statusText}</span>
+        </div>
+        <div class="combo-lines">${linesHTML}</div>
+        <div class="combo-totals">
+          <span><b>${combo.totTrucks}</b> trucks</span>
+          <span><b>${fmt(combo.totTonnes)}</b> t</span>
+          <span><b>${fmt(combo.totOz)}</b> oz</span>
+        </div>
+        <button class="combo-use-btn">Use this plan</button>
+      `;
+      card.querySelector('.combo-use-btn').addEventListener('click', ()=>{
+        requests = [
+          ...combo.dayLines.map(l=>({stopeId:l.stopeId, tonnes:l.tonnes, phase:'day'})),
+          ...combo.nightLines.map(l=>({stopeId:l.stopeId, tonnes:l.tonnes, phase:'night'})),
+        ];
+        render();
+        const ticketEl = document.querySelector('.ticket-wrap');
+        if(ticketEl) ticketEl.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+      list.appendChild(card);
+    });
+    wrap.appendChild(list);
+  }
+
+  $('runOptimizerBtn').addEventListener('click', renderOptimizerResults);
+
+  // Numpad
+  function openNumpad(stopeId){
+    activeStopeId = stopeId;
+    const s = stopeById(stopeId);
+    const combined = requests.filter(r=>r.stopeId===stopeId).reduce((sum,r)=>sum+Number(r.tonnes),0);
+    npValue = combined>0 ? String(combined) : '';
+    $('npStopeName').textContent = s.name;
+    $('npStopeGrade').textContent = fmt(s.grade,2) + ' g/t · ' + fmt(s.tonnes) + ' t avail';
+    $('npValueInput').value = npValue;
+    updateNumpadDisplay();
+    $('numpadOverlay').classList.add('open');
+    setTimeout(()=>{
+      $('npValueInput').focus();
+      const v = $('npValueInput').value;
+      $('npValueInput').setSelectionRange(v.length, v.length);
+    }, 50);
+  }
+  function closeNumpad(){
+    $('numpadOverlay').classList.remove('open');
+    activeStopeId = null;
+  }
+  function updateNumpadDisplay(){
+    const s = stopeById(activeStopeId);
+    const tonnes = parseFloat(npValue)||0;
+    $('npOunces').textContent = fmt(calcOunces(tonnes, s ? s.grade : 0));
+    $('npTrucks').textContent = fmt(calcTrucks(tonnes));
+    $('npConfirm').disabled = tonnes<=0;
+  }
+  function confirmNumpad(){
+    const tonnes = parseFloat(npValue)||0;
+    if(tonnes<=0 || !activeStopeId) return;
+    // Manual edit collapses any day/night split from the optimizer into one plain entry
+    requests = requests.filter(r=>r.stopeId!==activeStopeId);
+    requests.push({stopeId:activeStopeId, tonnes});
+    closeNumpad();
+    render();
+  }
+
+  // Tap numpad — updates the real input so both entry paths stay in sync
+  $('numpadGrid').addEventListener('click', e=>{
+    const btn = e.target.closest('.numkey');
+    if(!btn) return;
+    const k = btn.dataset.k;
+    if(k==='clear'){ npValue=''; }
+    else if(k==='back'){ npValue = npValue.slice(0,-1); }
+    else if(k==='.'){ if(!npValue.includes('.')) npValue += '.'; }
+    else { if(npValue.length<7) npValue += k; }
+    $('npValueInput').value = npValue;
+    updateNumpadDisplay();
+  });
+
+  // Physical keyboard — typing directly into the display field
+  $('npValueInput').addEventListener('input', e=>{
+    let v = e.target.value.replace(/[^0-9.]/g,'');
+    const firstDot = v.indexOf('.');
+    if(firstDot!==-1) v = v.slice(0,firstDot+1) + v.slice(firstDot+1).replace(/\./g,'');
+    npValue = v;
+    e.target.value = v;
+    updateNumpadDisplay();
+  });
+  $('npValueInput').addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); confirmNumpad(); }
+    else if(e.key==='Escape'){ e.preventDefault(); closeNumpad(); }
+  });
+
+  $('npConfirm').addEventListener('click', confirmNumpad);
+  $('npClose').addEventListener('click', closeNumpad);
+  $('numpadOverlay').addEventListener('click', e=>{ if(e.target.id==='numpadOverlay') closeNumpad(); });
+
+  // Settings
+  function renderStockRows(){
+    const wrap = $('stockRows');
+    wrap.innerHTML = '';
+    stock.forEach(s=>{
+      const row = document.createElement('div');
+      row.className = 'stock-row';
+      row.innerHTML = `
+        <input type="text" value="${escapeHtml(s.name)}" data-field="name">
+        <input type="number" class="mono" value="${s.grade}" step="0.01" data-field="grade">
+        <input type="number" class="mono" value="${s.tonnes}" step="1" data-field="tonnes">
+        <select data-field="shift">
+          <option value="day"${s.shift==='day'?' selected':''}>Day</option>
+          <option value="night"${s.shift==='night'?' selected':''}>Night</option>
+          <option value="both"${s.shift==='both'?' selected':''}>Both</option>
+        </select>
+        <button class="del" aria-label="Delete stope">✕</button>
+      `;
+      row.querySelectorAll('input').forEach(inp=>{
+        inp.addEventListener('input', ()=>{
+          const field = inp.dataset.field;
+          s[field] = field==='name' ? inp.value : parseFloat(inp.value)||0;
+          saveStock();
+          render();
+        });
+      });
+      row.querySelector('select').addEventListener('change', e=>{
+        s.shift = e.target.value;
+        saveStock();
+        render();
+      });
+      row.querySelector('.del').addEventListener('click', ()=>{
+        stock = stock.filter(x=>x.id!==s.id);
+        requests = requests.filter(r=>r.stopeId!==s.id);
+        saveStock();
+        renderStockRows();
+        render();
+      });
+      wrap.appendChild(row);
+    });
+  }
+  $('addStopeBtn').addEventListener('click', ()=>{
+    stock.push({id:uid(), name:'New stope', grade:0, tonnes:0, shift:'both'});
+    saveStock();
+    renderStockRows();
+    render();
+  });
+  $('settingsBtn').addEventListener('click', ()=>{
+    renderStockRows();
+    $('asmTruck').value = assumptions.truckCap;
+    $('asmFactor').value = assumptions.ozFactor;
+    $('asmRecovery').value = assumptions.recovery;
+    $('settingsOverlay').classList.add('open');
+  });
+  $('setClose').addEventListener('click', ()=> $('settingsOverlay').classList.remove('open'));
+  $('setDone').addEventListener('click', ()=> $('settingsOverlay').classList.remove('open'));
+  $('settingsOverlay').addEventListener('click', e=>{ if(e.target.id==='settingsOverlay') $('settingsOverlay').classList.remove('open'); });
+
+  ['asmTruck','asmFactor','asmRecovery'].forEach(id=>{
+    $(id).addEventListener('input', ()=>{
+      assumptions.truckCap = parseFloat($('asmTruck').value)||1;
+      assumptions.ozFactor = parseFloat($('asmFactor').value)||0;
+      assumptions.recovery = parseFloat($('asmRecovery').value)||0;
+      saveAssumptions();
+      render();
+    });
+  });
+
+  $('targetTonnes').addEventListener('input', ()=>{
+    targets.tonnes = parseFloat($('targetTonnes').value)||0;
+    saveTargets();
+    render();
+  });
+  $('targetOunces').addEventListener('input', ()=>{
+    targets.ounces = parseFloat($('targetOunces').value)||0;
+    saveTargets();
+    render();
+  });
+
+  // Ticket actions
+  $('clearBtn').addEventListener('click', ()=>{
+    requests = [];
+    render();
+  });
+  $('copyBtn').addEventListener('click', async ()=>{
+    const msg = buildMessage();
+    if(!msg){ return; }
+    try{
+      await navigator.clipboard.writeText(msg);
+      const btn = $('copyBtn');
+      const original = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('copied');
+      setTimeout(()=>{ btn.textContent = original; btn.classList.remove('copied'); }, 1600);
+    }catch(e){
+      alert(msg);
+    }
+  });
+
+  loadState();
+})();
+</script>
+</body>
+</html>
